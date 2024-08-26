@@ -1,0 +1,90 @@
+﻿@page "/"
+@inject ICardsService CardsService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Home</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to your new app.
+<br />
+<h3>Scartch Card List</h3>
+<div>
+    <QuickGrid Items="@AllCards"Class="table table-striped">
+        <PropertyColumn Property="@(card => card.Id)" Title="Card-Id" />
+        <PropertyColumn Property="@(card => card.Name)" />
+        <PropertyColumn Property="@(card => card.StartNumber)" />
+        <PropertyColumn Property="@(card => card.EndNumber)" />
+        <PropertyColumn Property="@(card => card.TicketPrice)" Title="Ticket Price" />
+        <PropertyColumn Property="@(card => (card.EndNumber - card.StartNumber) * card.TicketPrice)" Title="Amount" />
+        <TemplateColumn Title="Actions">
+            <button @onclick="@(() => HandleEdit(context.Id))">Edit</button>
+            <button @onclick="@(() => HandleDeleteAsync(context))">Delete</button>
+        </TemplateColumn>
+        
+    </QuickGrid>
+</div>
+<div>Total Amount = "@Sum"</div>
+@code
+{
+    private IQueryable<Card>? AllCards{get; set;}
+        
+        [Parameter]
+    public decimal Sum{get; set;}
+
+   [Parameter]
+   public decimal CardTotal{get; set;}
+    
+    protected override async Task OnInitializedAsync()
+    {
+        
+        AllCards = (await CardsService.GetAllCards()).AsQueryable();
+    
+    
+    }
+
+    protected async Task OnParameterSetAsync()
+    {
+        
+        if(AllCards is null)
+        {
+            CardTotal = 0;
+    
+        }
+        
+        foreach(var x in AllCards)
+        {
+            CardTotal = (x.EndNumber - x.StartNumber) * x.TicketPrice;
+            Sum += CardTotal;
+        }
+        
+        
+        await Task.CompletedTask;
+    }
+
+    private void HandleEdit(int cardId)
+    {
+        if(cardId == 0)
+        {
+            return;
+        }
+        NavigationManager.NavigateTo($"/cardedit/{cardId}", forceLoad:true);
+        
+    }
+
+ 
+
+    private async Task HandleDeleteAsync(Card card)
+    {
+        if(card is  null)
+        {
+            return;
+        }
+        await CardsService.DeleteCard(card.Id);
+        
+        NavigationManager.NavigateTo("/");
+    }
+
+
+   
+}

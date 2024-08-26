@@ -1,0 +1,102 @@
+
+@page "/cardadd"
+@inject NavigationManager NavigationManager
+@inject ICardsService CardsService
+
+<PageTitle>Add Scratcher</PageTitle>
+<h3>Add Scratcher</h3>
+
+
+@if(Scratcher is not null)
+{
+    <EditForm Enhance Model="Scratcher"
+        OnSubmit="@HandleSubmit"
+        FormName="AddCardForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary/>
+
+        <div class="row mb-3">
+            <label for="CardId" class="col-form-label col-md-3">Id: </label>
+            <div class="col-md-8">
+                <InputNumber id="CardId" class="form-control col-md-8" @bind-Value="@Scratcher!.Id" placeholder="Id"></InputNumber>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label for="CardName" class="col-form-label col-md-3">Name: </label>
+            <div class="col-md-8">
+                <InputText id="CardName" class="form-control col-md-8" @bind-Value="@Scratcher!.Name" placeholder="Enter name"></InputText>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label for="CardStartNum" class="col-form-label col-md-3">Starting Number: </label>
+            <div class="col-md-8">
+                <InputNumber id="CardStartNum" class="form-control col-md-8" @bind-Value="@Scratcher!.StartNumber" placeholder="Enter first number"></InputNumber>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label for="CardEndNum" class="col-form-label col-md-3">Ending Number: </label>
+            <div class="col-md-8">
+                <InputNumber id="CardEndNum" class="form-control col-md-8" @bind-Value="@Scratcher!.EndNumber" placeholder="Enter last number"></InputNumber>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label for="CardPrice" class="col-form-label col-md-3">Scratcher Price: </label>
+            <div class="col-md-8">
+                <InputNumber id="CardPrice" class="form-control col-md-8" @bind-Value="@Scratcher!.TicketPrice" placeholder="Enter price"></InputNumber>
+            </div>
+        </div>
+
+         <div>
+            <button type="submit" class="btn btn-success ms-1">Submit</button>
+        </div>
+    </EditForm>
+
+    @if(!IsSaved)
+    {
+        <h4 class="text-danger text-center">@Message</h4>
+    }
+    <br/>
+
+}
+
+@code
+{
+    [SupplyParameterFromForm]
+    public Card? Scratcher{get; set;}
+
+    protected string Message = string.Empty;
+    protected bool IsSaved = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Scratcher ??= new();
+        await Task.CompletedTask;
+
+    }
+
+    private async Task HandleSubmit()
+    {
+        if(Scratcher is not null && Scratcher.Id > 0)
+        {
+            await CardsService!.AddCard(Scratcher);
+            IsSaved = true;
+            Message = "Car added Successfully.";
+            NavigateToHome();
+        }
+        else
+        {
+            IsSaved = false;
+            Message = "There are some Validation errors";
+        }
+        await Task.CompletedTask;
+    }
+
+    private void NavigateToHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}

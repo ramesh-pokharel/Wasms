@@ -1,0 +1,95 @@
+@page "/cardedit/{UpdatedCardId:int}"
+@inject ICardsService CardsService
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>Edit Scratch Card</PageTitle>
+<h3>Edit Scratch Card</h3>
+
+@if(UpdatedCard is not null)
+{
+    <EditForm Enhance Model="UpdatedCard"
+        OnSubmit="@HandleSubmit"
+        FormName="EditCardForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary/>
+
+        <div class="row mb-3">
+            <label for="CardName" class="col-form-label col-md-3">Name: </label>
+            <div class="col-md-8">
+                <InputText id="CardName" class="form-control col-md-8" @bind-Value="@UpdatedCard!.Name" placeholder="Enter name"></InputText>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label for="CardStartNum" class="col-form-label col-md-3">Starting Number: </label>
+            <div class="col-md-8">
+                <InputNumber id="CardStartNum" class="form-control col-md-8" @bind-Value="@UpdatedCard!.StartNumber" placeholder="Enter first number"></InputNumber>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label for="CardEndNum" class="col-form-label col-md-3">Ending Number: </label>
+            <div class="col-md-8">
+                <InputNumber id="CardEndNum" class="form-control col-md-8" @bind-Value="@UpdatedCard!.EndNumber" placeholder="Enter last number"></InputNumber>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <label for="CardPrice" class="col-form-label col-md-3">Scratcher Price: </label>
+            <div class="col-md-8">
+                <InputNumber id="CardPrice" class="form-control col-md-8" @bind-Value="@UpdatedCard!.TicketPrice" placeholder="Enter price"></InputNumber>
+            </div>
+        </div>
+
+         <div>
+            <button type="submit" class="btn btn-outline-primary ms-1">Update</button>
+            <button type="button" class="btn btn-outline-primary ms-1" @onclick="@NavigateToHome">
+                Cancel
+            </button>
+        </div>
+    </EditForm>
+
+}
+
+@if(!IsSaved)
+{
+    <h4 class="text-danger text-center">@Message</h4>
+}
+
+@code
+{
+    [SupplyParameterFromForm]
+    public Card? UpdatedCard{get; set;}
+
+    [Parameter]
+    public int UpdatedCardId{get; set;}
+    protected bool IsSaved = false;
+    private string Message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsSaved = false;
+        UpdatedCard = await CardsService.GetCardById(UpdatedCardId);
+    }
+
+    protected async Task HandleSubmit()
+    {
+        if(UpdatedCard is not null)
+        {
+            await CardsService.UpdateCard(UpdatedCard);
+            //Message = "Scratch Card updated successfully.";
+            IsSaved = true;
+            NavigateToHome();
+        }else
+        {
+            Message = "There are some errors.";
+            IsSaved = false;
+        }
+    }
+
+    private void NavigateToHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+}
