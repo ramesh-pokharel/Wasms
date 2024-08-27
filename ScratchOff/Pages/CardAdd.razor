@@ -1,7 +1,8 @@
 
 @page "/cardadd"
 @inject NavigationManager NavigationManager
-@inject ICardsService CardsService
+@inject IIndexedDbFactory DbFactory
+
 
 <PageTitle>Add Scratcher</PageTitle>
 <h3>Add Scratcher</h3>
@@ -14,13 +15,14 @@
         FormName="AddCardForm">
         <DataAnnotationsValidator />
         <ValidationSummary/>
-
+    <!--
         <div class="row mb-3">
             <label for="CardId" class="col-form-label col-md-3">Id: </label>
             <div class="col-md-8">
                 <InputNumber id="CardId" class="form-control col-md-8" @bind-Value="@Scratcher!.Id" placeholder="Id"></InputNumber>
             </div>
         </div>
+    -->
 
         <div class="row mb-3">
             <label for="CardName" class="col-form-label col-md-3">Name: </label>
@@ -80,11 +82,15 @@
 
     private async Task HandleSubmit()
     {
-        if(Scratcher is not null && Scratcher.Id > 0)
+
+        if(Scratcher is not null)
         {
-            await CardsService!.AddCard(Scratcher);
+            using var db = await this.DbFactory.Create<ScratcherDb>();
+            db.Cards!.Add(Scratcher);   
+            await db.SaveChanges();
             IsSaved = true;
             Message = "Car added Successfully.";
+            
             NavigateToHome();
         }
         else
@@ -94,6 +100,7 @@
         }
         await Task.CompletedTask;
     }
+
 
     private void NavigateToHome()
     {

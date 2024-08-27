@@ -1,5 +1,5 @@
 ﻿@page "/"
-@inject ICardsService CardsService
+@inject IIndexedDbFactory DbFactory
 @inject NavigationManager NavigationManager
 
 <PageTitle>Home</PageTitle>
@@ -36,16 +36,28 @@ Welcome to your new app.
    public decimal CardTotal{get; set;}
     
     protected override async Task OnInitializedAsync()
-    {
+    { 
+        using var db = await DbFactory.Create<ScratcherDb>();
         
-        AllCards = (await CardsService.GetAllCards()).AsQueryable();
-    
+            foreach(var x in InitialList())
+            {
+                db.Cards.Add(x);
+            }
+        await db.SaveChanges();
+        AllCards = (db.Cards).AsQueryable(); 
+        
     
     }
 
-    protected async Task OnParameterSetAsync()
+    private async Task RefreshCardList()
     {
-        
+        using var db = await DbFactory.Create<ScratcherDb>();
+        AllCards = (db!.Cards)!.AsQueryable(); 
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await RefreshCardList();
         if(AllCards is null)
         {
             CardTotal = 0;
@@ -80,11 +92,32 @@ Welcome to your new app.
         {
             return;
         }
-        await CardsService.DeleteCard(card.Id);
+
+        using var db = await DbFactory.Create<ScratcherDb>();
+        var cardToDelete = db.Cards!.FirstOrDefault(c => c.Id == card.Id);
         
-        NavigationManager.NavigateTo("/");
+        if(cardToDelete != null)
+        {
+            db.Cards!.Remove(cardToDelete);
+            await db.SaveChanges();
+            await RefreshCardList();
+        }
+        
+        //NavigationManager.NavigateTo("/");
     }
 
+private static  List<Card> InitialList()
+    {
+        List<Card> cards = new()
+            {
+                new Card{Id = 1, Name = "a", StartNumber = 1, EndNumber = 35, TicketPrice = 5},
+                new Card{Id = 2, Name = "b", StartNumber = 0, EndNumber = 0, TicketPrice = 0},
+                new Card{Id = 3, Name = "c", StartNumber = 3, EndNumber = 34, TicketPrice = 10},
+                new Card{Id = 4, Name = "d", StartNumber = 0, EndNumber = 0, TicketPrice = 0},
+                new Card{Id = 5, Name = "e", StartNumber = 0, EndNumber = 0, TicketPrice = 0}     
 
+            };
+            return cards;
+    }
    
 }

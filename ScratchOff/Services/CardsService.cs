@@ -1,33 +1,41 @@
 using ScratchOff.Models;
+using IndexedDB.Blazor;
+using ScratchOff.Data;
 
 namespace ScratchOff.Services;
 
 public class CardsService : ICardsService
 {
+    private readonly IIndexedDbFactory dbFactory;
+    public ICollection<Card> cardList;
     public CardsService()
+
     {
+        using var db = dbFactory!.Create<ScratcherDb>();
         foreach(var x in CardList())
         {
-            cards.Add(x);
+            db.Result.Cards!.Add(x);
         }
+        cardList = db.Result.Cards!.ToList();
     }
-    public ICollection<Card> cards = new List<Card>();
+    
 
      public async Task<IEnumerable<Card>> GetAllCards()
     {
-        
-        return await Task.FromResult(cards);
+        using var db = await dbFactory.Create<ScratcherDb>();
+        cardList = db.Cards!.ToList();
+        return cardList;
     }
 
     public async Task<Card> GetCardById(int cardId)
     {
         
-        Card result = cards.FirstOrDefault(item => item.Id == cardId)?? throw new NullReferenceException("cards null");
+        Card result = cardList.FirstOrDefault(item => item.Id == cardId)?? throw new NullReferenceException("cards null");
         return await Task.FromResult(result);
     }
     public async Task<Card> AddCard(Card card)
     {
-        int cardId = cards.Count + 1;
+        
         string name = card.Name ?? "none";
         int startingNumber = card.StartNumber;
         int endNumber = card.EndNumber;
@@ -35,26 +43,30 @@ public class CardsService : ICardsService
         
         Card newCard = new()
         {
-            Id= cardId, Name = name, StartNumber = startingNumber, EndNumber = endNumber, TicketPrice = price
+             Name = name, StartNumber = startingNumber, EndNumber = endNumber, TicketPrice = price
         };
-        cards.Add(newCard);
+        using var db = dbFactory.Create<ScratcherDb>();
+        db.Result.Cards!.Add(newCard);
+        cardList = db.Result.Cards.ToList();
         return await Task.FromResult(newCard);
     }
 
     public async Task DeleteCard(int cardId)
     {
         Card result;
-
-        if (cards is not null)
+        using var db = dbFactory.Create<ScratcherDb>();
+        if (db.Result.Cards is not null)
         {
-            result =  cards.FirstOrDefault(item => item.Id == cardId);
+            result =  db.Result.Cards.FirstOrDefault(item => item.Id == cardId);
         
             if(result != null)
             {
-                cards.Remove(result);
+                db.Result.Cards!.ToList().Remove(result);
             }
             
+            
         }
+        cardList = db.Result.Cards!.ToList();
     
         await Task.CompletedTask;
         
@@ -64,14 +76,15 @@ public class CardsService : ICardsService
 
     public async Task<Card> UpdateCard(Card card)
     {
-        Card existingCard = cards.FirstOrDefault(x => x.Id == card.Id);
+        using var db = dbFactory.Create<ScratcherDb>();
+        Card existingCard = db.Result.Cards.FirstOrDefault(x => x.Id == card.Id);
         if(existingCard is not null)
         {
-            existingCard.Id= card.Id;
             existingCard.Name = card.Name ?? "none";
             existingCard.StartNumber = card.StartNumber;
             existingCard.EndNumber = card.EndNumber;
             existingCard.TicketPrice = card.TicketPrice;
+            cardList = db.Result.Cards.ToList();
             return await Task.FromResult(existingCard);
         }
        

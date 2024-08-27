@@ -1,12 +1,12 @@
 @page "/cardedit/{UpdatedCardId:int}"
-@inject ICardsService CardsService
+@inject IIndexedDbFactory DbFactory
 @inject NavigationManager NavigationManager
 
 
 <PageTitle>Edit Scratch Card</PageTitle>
 <h3>Edit Scratch Card</h3>
 
-@if(UpdatedCard is not null)
+@if(UpdatedCardId > 0)
 {
     <EditForm Enhance Model="UpdatedCard"
         OnSubmit="@HandleSubmit"
@@ -27,14 +27,14 @@
                 <InputNumber id="CardStartNum" class="form-control col-md-8" @bind-Value="@UpdatedCard!.StartNumber" placeholder="Enter first number"></InputNumber>
             </div>
         </div>
-
+    
         <div class="row mb-3">
             <label for="CardEndNum" class="col-form-label col-md-3">Ending Number: </label>
             <div class="col-md-8">
                 <InputNumber id="CardEndNum" class="form-control col-md-8" @bind-Value="@UpdatedCard!.EndNumber" placeholder="Enter last number"></InputNumber>
             </div>
         </div>
-
+    
         <div class="row mb-3">
             <label for="CardPrice" class="col-form-label col-md-3">Scratcher Price: </label>
             <div class="col-md-8">
@@ -60,7 +60,7 @@
 @code
 {
     [SupplyParameterFromForm]
-    public Card? UpdatedCard{get; set;}
+    public Card UpdatedCard{get; set;}
 
     [Parameter]
     public int UpdatedCardId{get; set;}
@@ -69,18 +69,25 @@
 
     protected override async Task OnInitializedAsync()
     {
-        IsSaved = false;
-        UpdatedCard = await CardsService.GetCardById(UpdatedCardId);
+         IsSaved = false;
+         await Task.CompletedTask;
+        
     }
 
     protected async Task HandleSubmit()
     {
-        if(UpdatedCard is not null)
-        {
-            await CardsService.UpdateCard(UpdatedCard);
-            //Message = "Scratch Card updated successfully.";
+        using var db = await this.DbFactory.Create<ScratcherDb>();
+        var cardToUpdate = db.Cards.FirstOrDefault(c => c.Id == UpdatedCardId);
+        if(cardToUpdate != null && UpdatedCard != null)
+        {   
+            cardToUpdate.Name = UpdatedCard.Name;
+            cardToUpdate.StartNumber = UpdatedCard.StartNumber;
+            cardToUpdate.EndNumber = UpdatedCard.EndNumber;
+            cardToUpdate.TicketPrice = UpdatedCard.TicketPrice;
+            Message = "Scratch Card updated successfully.";
+            await db.SaveChanges();
             IsSaved = true;
-            NavigateToHome();
+            //NavigateToHome();
         }else
         {
             Message = "There are some errors.";
