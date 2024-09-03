@@ -24,7 +24,7 @@ Welcome to your new app.
         
     </QuickGrid>
 </div>
-<div>Total Amount = "@Sum"</div>
+<div>Total Amount = @Sum.ToString("C2")</div>
 @code
 {
     private IQueryable<Card>? AllCards{get; set;}
@@ -38,13 +38,15 @@ Welcome to your new app.
     protected override async Task OnInitializedAsync()
     { 
         using var db = await DbFactory.Create<ScratcherDb>();
-        
+        if(db.Cards is not null && db.Cards.Count < 1)
+        {
             foreach(var x in InitialList())
             {
                 db.Cards.Add(x);
             }
+        }
         await db.SaveChanges();
-        AllCards = (db.Cards).AsQueryable(); 
+        AllCards = (db.Cards!).AsQueryable(); 
         
     
     }
@@ -80,7 +82,7 @@ Welcome to your new app.
         {
             return;
         }
-        NavigationManager.NavigateTo($"/cardedit/{cardId}", forceLoad:true);
+        NavigationManager.NavigateTo($"/cardedit/{cardId}");
         
     }
 

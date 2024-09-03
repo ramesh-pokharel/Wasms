@@ -10,7 +10,7 @@
 
 @if(Scratcher is not null)
 {
-    <EditForm Enhance Model="Scratcher"
+    <EditForm Enhance Model="@Scratcher"
         OnSubmit="@HandleSubmit"
         FormName="AddCardForm">
         <DataAnnotationsValidator />
